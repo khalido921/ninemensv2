@@ -22,7 +22,16 @@ app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Root endpoint for basic connectivity test
+app.get('/', (req, res) => {
+  res.status(200).json({ 
+    message: 'Nine Men\'s Morris Server is running',
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -454,8 +463,16 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const PORT = process.env.PORT || 3001;
+
+// Error handling for server startup
+server.on('error', (error) => {
+  console.error('Server error:', error);
+  process.exit(1);
+});
+
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Health check available at: http://localhost:${PORT}/health`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+  console.log(`🎮 Game server ready!`);
 }); 

@@ -1,6 +1,9 @@
 # Use Node.js 18 as base image
 FROM node:18-alpine
 
+# Install wget for health checks
+RUN apk add --no-cache wget
+
 # Set working directory
 WORKDIR /app
 
@@ -8,41 +11,28 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3001
 
-# Copy package files
+# Copy package files first for better caching
 COPY package*.json ./
 COPY client/package*.json ./client/
 COPY server/package*.json ./server/
 
-# Install root dependencies
+# Install all dependencies
 RUN npm install
-
-# Install client dependencies
-WORKDIR /app/client
-RUN npm install
-
-# Install server dependencies
-WORKDIR /app/server
-RUN npm install
-
-# Return to root directory
-WORKDIR /app
+RUN cd client && npm install
+RUN cd server && npm install
 
 # Copy source code
 COPY . .
 
 # Build the React app
-WORKDIR /app/client
-RUN npm run build
-
-# Return to root directory
-WORKDIR /app
+RUN cd client && npm run build
 
 # Expose port
 EXPOSE 3001
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
 
 # Start the server
-CMD ["npm", "run", "server"] 
+CMD ["node", "server/index.js"] 
