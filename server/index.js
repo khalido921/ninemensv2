@@ -17,6 +17,15 @@ const io = socketIo(server, {
 app.use(cors());
 app.use(express.json());
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 // Serve static files from the React build
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/build')));
@@ -139,7 +148,7 @@ class Game {
     // Check if piece is in a mill
     if (this.isInMill(position, opponentId)) {
       // Only allow removal if all opponent pieces are in mills
-      const allOpponentPieces = this.board.map((player, pos) => player === opponentId ? pos : -1).filter(pos => pos !== -1);
+      const allOpponentPieces = this.board.map((player, index) => player === opponentId ? index : -1).filter(index => index !== -1);
       const allInMills = allOpponentPieces.every(pos => this.isInMill(pos, opponentId));
       if (!allInMills) return false;
     }
@@ -445,6 +454,8 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Health check available at: http://localhost:${PORT}/health`);
 }); 
