@@ -2,19 +2,25 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: process.env.NODE_ENV === 'production' ? false : "http://localhost:3000",
     methods: ["GET", "POST"]
   }
 });
 
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from the React build
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../client/build')));
+}
 
 // Game state storage
 const games = new Map();
@@ -188,11 +194,11 @@ class Game {
 
   hasLegalMoves(playerId) {
     const player = this.players[playerId];
-    const playerPieces = this.board.map((player, pos) => player === playerId ? pos : -1).filter(pos => pos !== -1);
+    const playerPieces = this.board.map((player, index) => player === playerId ? index : -1).filter(index => index !== -1);
     
     if (player.inPlay === 3) {
       // Flying phase - can move to any empty position
-      const emptyPositions = this.board.map((player, pos) => player === null ? pos : -1).filter(pos => pos !== -1);
+      const emptyPositions = this.board.map((player, index) => player === null ? index : -1).filter(index => index !== -1);
       return emptyPositions.length > 0;
     }
     
@@ -430,6 +436,13 @@ setInterval(() => {
     }
   }
 }, 60 * 60 * 1000); // Run every hour
+
+// Serve React app for all non-API routes
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build/index.html'));
+  });
+}
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
