@@ -18,8 +18,8 @@ COPY server/package*.json ./server/
 
 # Install all dependencies
 RUN npm install
-RUN cd client && npm install
-RUN cd server && npm install
+RUN cd client && npm install --production=false
+RUN cd server && npm install --production=false
 
 # Copy source code
 COPY . .
